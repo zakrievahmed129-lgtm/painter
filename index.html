@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono-Painter : Neon Edition</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+            height: 100vh; /* Correction : Assure que le corps prend toute la hauteur */
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex; /* Centrage renforcé */
+            justify-content: center; /* Centre horizontal */
+            align-items: center; /* Centre vertical */
+            z-index: 20;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(0, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 0 10px #0ff;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+        }
+
+        #title-card, #level-complete-card {
+            text-align: center;
+            pointer-events: auto;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.85); /* Plus opaque pour le centrage */
+            padding: 40px 60px;
+            border: 3px solid #0ff;
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.6), inset 0 0 10px #0ff;
+            transition: transform 0.3s, opacity 0.5s;
+            max-width: 90%;
+            pointer-events: none; /* Caché par défaut */
+            opacity: 0;
+        }
+
+        #title-card.active, #level-complete-card.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 3em;
+            color: #fff;
+            text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+            letter-spacing: 5px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        
+        #title-card h1 { font-size: 4em; }
+
+        h2 {
+            font-size: 1.2em;
+            color: #0ff;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .level-info {
+            color: #ccc;
+            margin-top: 15px;
+            font-size: 1em;
+            max-width: 500px;
+            text-align: left;
+            border-left: 2px solid #0ff;
+            padding-left: 15px;
+            margin: 20px auto;
+        }
+        .level-info strong { color: #fff; text-shadow: 0 0 5px #0ff; }
+        .level-info .feature { color: #ffaa00; font-weight: bold; }
+        .level-info .new-feature { color: #ff00ff; font-weight: bold; text-shadow: 0 0 5px #f0f; }
+
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            text-align: left;
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .key {
+            color: #000;
+            background: #0ff;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: bold;
+            margin-right: 5px;
+            box-shadow: 0 0 5px #0ff;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-align: left;
+            display: none;
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff;
+            font-size: 1.2em;
+        }
+        #ink-bar {
+            width: 150px;
+            height: 10px;
+            background: #111;
+            border: 1px solid #0ff;
+            margin-top: 5px;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        }
+        #ink-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #0088ff);
+            transition: width 0.1s;
+        }
+
+        .blink { animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="crosshair"></div>
+
+    <div id="ui-layer">
+        <div id="title-card" class="active">
+            <h1>CHRONO<br>PAINTER</h1>
+            <h2>// PROTOCOLE DE CRÉATION DE CHEMIN //</h2>
+            <div id="intro-text">
+                <p class="level-info">
+                    <strong>Niveau 1 (Entraînement) :</strong>
+                    <br>Votre système d'encre est en mode <span class="feature">Infini</span>. Utilisez [CLIC GAUCHE] pour créer des plateformes et atteindre le cube orange.
+                </p>
+                <p class="level-info hidden" id="ink-tutorial">
+                    <strong>Nouveauté : Capacité d'Encre !</strong>
+                    <br>Dès le Niveau 2, votre Encre est limitée. Chaque plateforme créée consomme de l'énergie. L'encre se régénère tant que vous ne peignez pas.
+                </p>
+                <p class="level-info hidden" id="impulse-tutorial">
+                    <strong>Nouveauté : Plateformes d'Impulsion !</strong>
+                    <br>Ces plateformes **Magenta** statiques vous offrent un <span class="new-feature">Méga-Saut</span>. Utilisez-les pour atteindre des hauteurs extrêmes sans utiliser trop d'encre.
+                </p>
+            </div>
+            <div class="blink" style="font-size: 1.5em; margin-bottom: 20px; color: #fff;">[ CLIQUER POUR DÉMARRER ]</div>
+            
+            <div class="controls">
+                <div><span class="key">CLIC GAUCHE</span> PEINDRE</div>
+                <div><span class="key">ZQSD</span> BOUGER</div>
+                <div><span class="key">ESPACE</span> SAUTER</div>
+                <div><span class="key">SOURIS</span> VISER</div>
+            </div>
+        </div>
+
+        <div id="level-complete-card">
+            <h1>NIVEAU TERMINÉ !</h1>
+            <h2 id="next-level-text">Préparation pour le prochain niveau...</h2>
+            <div id="next-level-feature" class="level-info"></div>
+            <div class="blink" style="font-size: 1.5em; margin-top: 30px; color: #fff;">[ CLIQUER POUR CONTINUER ]</div>
+        </div>
+
+        <div id="hud">
+            <div>NIVEAU: <span id="level-val">1</span></div>
+            <div>SYS: <span style="color:#0f0">ONLINE</span></div>
+            <div id="ink-display">
+                ENCRE: <span id="ink-val">∞</span>
+                <div id="ink-bar" class="hidden"><div id="ink-fill"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+        // --- Configuration Générale ---
+        const CONFIG = {
+            paintDistance: 6.0,
+            blockSize: 3.0,
+            blockLife: 5.0,
+            gravity: 16.0, 
+            jumpForce: 12.0, 
+            speed: 6.0,
+            paintRate: 0.08,
+            fogColor: 0x050515,
+            inkConsumption: 5.0, 
+            goalProximity: 5.0,
+            impulseBoost: 25.0, // Force du saut de la plateforme d'impulsion
+        };
+        
+        // --- Configuration des Niveaux (6 niveaux) ---
+        // Note: 'distance' et 'height' sont pour le cube objectif
+        const LevelConfig = [
+            // Level 1: Entraînement - Encre Infinie
+            { distance: 60, height: 10, inkCapacity: Infinity, inkRegenRate: 0, speed: 6.0, feature: "Bienvenue. Système d'encre en mode illimité.", impulsePads: 0, showInkTutorial: true, showImpulseTutorial: false }, 
+            // Level 2: Introduction de la limitation d'encre
+            { distance: 80, height: 15, inkCapacity: 150, inkRegenRate: 30, speed: 7.0, feature: "Débloqué : <span class='feature'>Capacité d'Encre (150)</span>. L'encre se régénère à un taux plus rapide.", impulsePads: 0, showInkTutorial: false, showImpulseTutorial: false },
+            // Level 3: Difficulté accrue
+            { distance: 100, height: 20, inkCapacity: 180, inkRegenRate: 35, speed: 8.0, feature: "Augmentation de la Capacité d'Encre (180) et de la vitesse de mouvement.", impulsePads: 0, showInkTutorial: false, showImpulseTutorial: false },
+            // Level 4: Environnement plus sombre / Obstacles
+            { distance: 120, height: 25, inkCapacity: 220, inkRegenRate: 40, speed: 9.0, feature: "Le défi est plus long et plus haut. Capacité d'Encre augmentée (220).", impulsePads: 0, showInkTutorial: false, showImpulseTutorial: false },
+            // Level 5: Introduction des Plateformes d'Impulsion
+            { distance: 150, height: 30, inkCapacity: 200, inkRegenRate: 30, speed: 8.0, feature: "Nouveauté : <span class='new-feature'>Plateformes d'Impulsion</span> (Magenta) apparaissent. Utilisez-les !", impulsePads: 3, showInkTutorial: false, showImpulseTutorial: true },
+            // Level 6: Défis Combinés (Finale)
+            { distance: 180, height: 40, inkCapacity: 250, inkRegenRate: 45, speed: 9.5, feature: "Défis Combinés. Utilisez votre encre et les impulsions pour la plus haute ascension.", impulsePads: 5, showInkTutorial: false, showImpulseTutorial: false },
+        ];
+
+
+        // --- Variables Globales d'État ---
+        let camera, scene, renderer, controls;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
+        let isPainting = false;
+        let prevTime = performance.now();
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let paintTimer = 0;
+        
+        // État du Jeu
+        let currentLevel = 0;
+        let currentInk = 0;
+        let maxInk = Infinity;
+        let inkRegenRate = 0;
+        
+        // Objets 3D
+        const paintBlocks = [];
+        const staticColliders = []; // Inclut le sol, la plateforme d'arrivée, et les Impulse Pads
+        let raycaster;
+        let playerHeight = 1.8;
+        let particles;
+        let goalCube;
+        let goalLight;
+        const impulsePads = []; // Pour la détection de collision des Impulse Pads
+
+        // Cinématique & UI
+        let isCinematic = true;
+
+        // DOM
+        const titleCard = document.getElementById('title-card');
+        const levelCompleteCard = document.getElementById('level-complete-card');
+        const crosshair = document.getElementById('crosshair');
+        const hud = document.getElementById('hud');
+        const inkBar = document.getElementById('ink-bar');
+        const inkFill = document.getElementById('ink-fill');
+
+        init();
+        animate();
+
+        // --- Fonctions Utilitaires ---
+
+        function generateGridTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const context = canvas.getContext('2d');
+            context.fillStyle = '#111';
+            context.fillRect(0, 0, 512, 512);
+            context.strokeStyle = '#00ffff';
+            context.lineWidth = 4;
+            context.strokeRect(0, 0, 512, 512);
+            context.beginPath();
+            context.moveTo(256, 0); context.lineTo(256, 512);
+            context.moveTo(0, 256); context.lineTo(512, 256);
+            context.stroke();
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            return texture;
+        }
+
+        function updateHUD() {
+            document.getElementById('level-val').textContent = currentLevel + 1;
+
+            if (maxInk === Infinity) {
+                document.getElementById('ink-val').textContent = '∞';
+                inkBar.classList.add('hidden');
+            } else {
+                document.getElementById('ink-val').textContent = `${Math.floor(currentInk)} / ${maxInk}`;
+                inkBar.classList.remove('hidden');
+                inkFill.style.width = `${(currentInk / maxInk) * 100}%`;
+                inkFill.style.backgroundColor = (currentInk < CONFIG.inkConsumption) ? '#ff0000' : (currentInk < maxInk * 0.2 ? '#ffff00' : '');
+            }
+        }
+
+        function resetLevel() {
+            // Supprimer les objets dynamiques (plateformes et impulsions)
+            paintBlocks.forEach(b => {
+                scene.remove(b.mesh);
+                b.mesh.geometry.dispose();
+                b.mesh.material.dispose();
+            });
+            paintBlocks.length = 0;
+
+            impulsePads.forEach(pad => {
+                scene.remove(pad);
+                pad.geometry.dispose();
+                pad.material.dispose();
+            });
+            impulsePads.length = 0;
+            staticColliders.length = 0; // Réinitialisé avant de recréer le niveau
+
+            // Réinitialiser la position du joueur (déclenché par lock event)
+            velocity.set(0, 0, 0);
+            
+            // Recharger la configuration du niveau
+            const config = LevelConfig[currentLevel];
+            maxInk = config.inkCapacity;
+            currentInk = maxInk === Infinity ? Infinity : maxInk;
+            inkRegenRate = config.inkRegenRate;
+            CONFIG.speed = config.speed;
+
+            // Mettre à jour les tutoriels
+            document.getElementById('ink-tutorial').classList.toggle('hidden', !config.showInkTutorial);
+            document.getElementById('impulse-tutorial').classList.toggle('hidden', !config.showImpulseTutorial);
+
+            // Créer le nouveau niveau
+            createLevel();
+            updateHUD();
+        }
+
+        // --- Initialisation THREE.js ---
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(CONFIG.fogColor);
+            scene.fog = new THREE.FogExp2(CONFIG.fogColor, 0.015);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            // Rendu
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Lumières
+            const ambientLight = new THREE.HemisphereLight(0x0000ff, 0x000000, 0.4);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            dirLight.position.set(20, 50, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 100;
+            dirLight.shadow.camera.left = -50;
+            dirLight.shadow.camera.right = 50;
+            dirLight.shadow.camera.top = 50;
+            dirLight.shadow.camera.bottom = -50;
+            scene.add(dirLight);
+
+            const playerLight = new THREE.PointLight(0x00ffff, 1, 15);
+            camera.add(playerLight);
+            scene.add(camera);
+
+            // Contrôles
+            controls = new PointerLockControls(camera, document.body);
+
+            // Gestionnaires d'événements UI
+            titleCard.addEventListener('click', () => {
+                titleCard.classList.remove('active');
+                controls.lock();
+            });
+            
+            levelCompleteCard.addEventListener('click', () => {
+                levelCompleteCard.classList.remove('active');
+                if (currentLevel < LevelConfig.length) {
+                    // Préparer le prochain niveau, puis relocker
+                    resetLevel(); 
+                    controls.lock();
+                } else {
+                    // Fin du jeu
+                    titleCard.classList.add('active');
+                    document.getElementById('intro-text').innerHTML = "<h2>PROTOCOLE TERMINÉ !</h2><p class='level-info'>Félicitations, agent. Vous avez maîtrisé le Chrono-Painting et achevé tous les défis du simulateur. Merci d'avoir joué !</p>";
+                }
+            });
+
+            controls.addEventListener('lock', () => {
+                isCinematic = false;
+                hud.style.display = 'block';
+                crosshair.style.opacity = '1';
+                
+                // Positionnement correct sur la plateforme de départ (Surface à Y=-0.5)
+                camera.position.set(0, 1.3, 0); 
+                camera.lookAt(0, 1.3, -10);
+            });
+
+            controls.addEventListener('unlock', () => {
+                isCinematic = true; 
+                if (!levelCompleteCard.classList.contains('active')) {
+                     titleCard.classList.add('active');
+                }
+                hud.style.display = 'none';
+                crosshair.style.opacity = '0';
+            });
+
+            // Input
+            const onKeyDown = (event) => {
+                if (!controls.isLocked) return;
+                switch (event.code) {
+                    case 'KeyW': case 'ArrowUp': moveForward = true; break;
+                    case 'KeyA': case 'ArrowLeft': moveLeft = true; break;
+                    case 'KeyS': case 'ArrowDown': moveBackward = true; break;
+                    case 'KeyD': case 'ArrowRight': moveRight = true; break;
+                    case 'Space': 
+                        if (canJump) { 
+                            velocity.y += CONFIG.jumpForce; 
+                            canJump = false; 
+                        } 
+                        break;
+                }
+            };
+            const onKeyUp = (event) => {
+                switch (event.code) {
+                    case 'KeyW': case 'ArrowUp': moveForward = false; break;
+                    case 'KeyA': case 'ArrowLeft': moveLeft = false; break;
+                    case 'KeyS': case 'ArrowDown': moveBackward = false; break;
+                    case 'KeyD': case 'ArrowRight': moveRight = false; break;
+                }
+            };
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousedown', () => isPainting = true);
+            document.addEventListener('mouseup', () => isPainting = false);
+
+            raycaster = new THREE.Raycaster();
+
+            // Initialisation du premier niveau
+            resetLevel();
+            createEnvironment();
+            
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createEnvironment() {
+            // Étoiles
+            const starsGeo = new THREE.BufferGeometry();
+            const starsCount = 2000;
+            const posArray = new Float32Array(starsCount * 3);
+            for(let i=0; i<starsCount*3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 300;
+            }
+            starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const starsMat = new THREE.PointsMaterial({size: 0.2, color: 0xffffff});
+            const stars = new THREE.Points(starsGeo, starsMat);
+            scene.add(stars);
+
+            // Grille de fond
+            const gridHelper = new THREE.GridHelper(200, 50, 0x004444, 0x001111);
+            gridHelper.position.y = -20;
+            scene.add(gridHelper);
+
+            // Particules flottantes
+            const particlesGeo = new THREE.BufferGeometry();
+            const pCount = 200;
+            const pPos = new Float32Array(pCount * 3);
+            for(let i=0; i<pCount*3; i++) {
+                pPos[i] = (Math.random() - 0.5) * 100;
+            }
+            particlesGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            const pMat = new THREE.PointsMaterial({
+                color: 0x00ffff, 
+                size: 0.1, 
+                transparent: true, 
+                opacity: 0.6
+            });
+            particles = new THREE.Points(particlesGeo, pMat);
+            scene.add(particles);
+        }
+
+        function createImpulsePad(x, y, z) {
+            const geometry = new THREE.BoxGeometry(2.5, 0.5, 2.5);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xff00ff,
+                emissive: 0xff00ff,
+                emissiveIntensity: 1.5,
+                metalness: 0.9,
+                roughness: 0.1,
+                transparent: true,
+                opacity: 0.9
+            });
+            const pad = new THREE.Mesh(geometry, material);
+            pad.position.set(x, y + 0.25, z); // Centre la plateforme sur Y=y
+            pad.userData.isImpulsePad = true;
+            pad.castShadow = true;
+            pad.receiveShadow = true;
+            scene.add(pad);
+            impulsePads.push(pad);
+            staticColliders.push(pad); // C'est un collider statique
+        }
+
+
+        function createLevel() {
+            const gridTex = generateGridTexture();
+            gridTex.repeat.set(2, 2);
+
+            const matFloor = new THREE.MeshStandardMaterial({ 
+                map: gridTex,
+                roughness: 0.2,
+                metalness: 0.8,
+                color: 0xaaaaaa
+            });
+
+            const matGoal = new THREE.MeshStandardMaterial({ 
+                color: 0xffaa00, 
+                emissive: 0xff4400,
+                emissiveIntensity: 0.8,
+                metalness: 1.0,
+                roughness: 0.1
+            });
+
+            const config = LevelConfig[currentLevel];
+            const goalZ = -config.distance;
+            const goalY = config.height;
+
+            // Start Platform (position fixe)
+            const startGeo = new THREE.BoxGeometry(10, 1, 10);
+            const startPlatform = new THREE.Mesh(startGeo, matFloor);
+            startPlatform.position.set(0, -1, 0); 
+            startPlatform.receiveShadow = true;
+            scene.add(startPlatform);
+            staticColliders.push(startPlatform);
+
+            // Goal Platform
+            const goalGeo = new THREE.BoxGeometry(8, 1, 8);
+            const goalPlatform = new THREE.Mesh(goalGeo, matFloor);
+            goalPlatform.position.set(0, goalY - 0.5, goalZ); // Surface à goalY
+            goalPlatform.receiveShadow = true;
+            scene.add(goalPlatform);
+            staticColliders.push(goalPlatform);
+
+            // Goal Cube
+            if (goalCube) scene.remove(goalCube);
+            const cubeGeo = new THREE.BoxGeometry(2, 2, 2);
+            goalCube = new THREE.Mesh(cubeGeo, matGoal);
+            goalCube.position.set(0, goalY + 1.5, goalZ);
+            goalCube.castShadow = true;
+            goalCube.rotation.y = Math.PI / 4;
+            scene.add(goalCube);
+
+            // Lumière locale du cube
+            if (goalLight) scene.remove(goalLight);
+            goalLight = new THREE.PointLight(0xffaa00, 2, 10);
+            goalLight.position.copy(goalCube.position);
+            scene.add(goalLight);
+
+            // --- Génération des Impulse Pads (à partir du Niveau 5) ---
+            if (config.impulsePads > 0) {
+                for (let i = 0; i < config.impulsePads; i++) {
+                    // Positionnement aléatoire entre Z=-10 et Z=goalZ, Y entre 0 et goalY
+                    const x = (Math.random() - 0.5) * 30; // -15 à 15
+                    const y = Math.max(0, Math.random() * goalY * 0.8);
+                    const z = -(Math.random() * (config.distance - 20) + 10); // -10 à -(distance-10)
+                    createImpulsePad(x, y, z);
+                }
+            }
+
+
+            // Animation du cube
+            const animateCube = () => {
+                if (goalCube) {
+                    goalCube.rotation.x += 0.01;
+                    goalCube.rotation.y += 0.015;
+                    requestAnimationFrame(animateCube);
+                }
+            }
+            animateCube();
+        }
+
+        function createPaintBlock() {
+            if (maxInk !== Infinity && currentInk < CONFIG.inkConsumption) {
+                // Pas assez d'encre !
+                return; 
+            }
+
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            const spawnPos = new THREE.Vector3();
+            spawnPos.copy(camera.position).add(direction.multiplyScalar(CONFIG.paintDistance));
+            spawnPos.y -= 1.5; 
+
+            const geometry = new THREE.BoxGeometry(CONFIG.blockSize, 1.0, CONFIG.blockSize);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0x00ffff, 
+                transparent: true, 
+                opacity: 0.9,
+                emissive: 0x0088aa,
+                emissiveIntensity: 1.0,
+                roughness: 0.1
+            });
+
+            const block = new THREE.Mesh(geometry, material);
+            block.position.copy(spawnPos);
+            block.lookAt(camera.position.x, block.position.y, camera.position.z);
+            block.rotation.x = 0; 
+            block.rotation.z = 0;
+            
+            block.castShadow = true;
+            block.receiveShadow = true;
+
+            scene.add(block);
+            paintBlocks.push({ mesh: block, life: CONFIG.blockLife, maxLife: CONFIG.blockLife });
+
+            // Consommation d'encre
+            if (maxInk !== Infinity) {
+                currentInk -= CONFIG.inkConsumption;
+            }
+        }
+
+        function updatePaint(delta) {
+            // 1. Encre et Régénération
+            if (maxInk !== Infinity && controls.isLocked) {
+                if (!isPainting && currentInk < maxInk) {
+                    currentInk = Math.min(maxInk, currentInk + inkRegenRate * delta);
+                }
+                updateHUD();
+            }
+
+            // 2. Création de blocs
+            if (isPainting && !isCinematic) {
+                paintTimer -= delta;
+                if (paintTimer <= 0) {
+                    createPaintBlock();
+                    paintTimer = CONFIG.paintRate;
+                }
+            } else {
+                paintTimer = 0;
+            }
+
+            // 3. Vie des blocs
+            for (let i = paintBlocks.length - 1; i >= 0; i--) {
+                const b = paintBlocks[i];
+                b.life -= delta;
+                const ratio = b.life / b.maxLife;
+                
+                // Couleur: Cyan -> Jaune -> Rouge (indicateur de dégradation)
+                const hue = ratio * 0.16 + 0.5; 
+                if (ratio < 0.2) {
+                     b.mesh.material.color.setHSL(0, 1.0, 0.5); // Rouge
+                     b.mesh.material.emissive.setHSL(0, 1.0, 0.5);
+                } else {
+                     b.mesh.material.color.setHSL(hue, 1.0, 0.5); 
+                     b.mesh.material.emissive.setHSL(hue, 1.0, 0.5);
+                }
+
+                if (ratio < 0.2) b.mesh.scale.setScalar(ratio / 0.2);
+
+                if (b.life <= 0) {
+                    scene.remove(b.mesh);
+                    b.mesh.geometry.dispose();
+                    b.mesh.material.dispose();
+                    paintBlocks.splice(i, 1);
+                }
+            }
+        }
+
+        function checkGoal() {
+            if (!goalCube || !controls.isLocked) return;
+
+            const playerPos = controls.getObject().position;
+            const goalPos = goalCube.position;
+            
+            // On vérifie la distance dans le plan horizontal (XZ)
+            const distance = playerPos.distanceTo(goalPos);
+
+            if (distance < CONFIG.goalProximity) {
+                // Vérifier la hauteur pour éviter de gagner en étant en dessous
+                if (playerPos.y > goalPos.y - 5.0) { 
+                    controls.unlock();
+                    
+                    currentLevel++;
+                    if (currentLevel < LevelConfig.length) {
+                        // Niveau suivant
+                        const nextConfig = LevelConfig[currentLevel];
+                        document.getElementById('next-level-text').textContent = `Niveau ${currentLevel + 1} débloqué !`;
+                        document.getElementById('next-level-feature').innerHTML = `<strong>Nouvelles règles :</strong> ${nextConfig.feature}`;
+                        levelCompleteCard.classList.add('active');
+                    } else {
+                        // Jeu terminé
+                        levelCompleteCard.classList.add('active');
+                        document.getElementById('next-level-text').textContent = `Félicitations, agent !`;
+                        document.getElementById('next-level-feature').innerHTML = `<strong>PROTOCOLE TERMINÉ.</strong> Vous avez réussi tous les niveaux.`;
+                    }
+                }
+            }
+        }
+
+        function updateCinematic(time) {
+            const radius = 40;
+            const height = 15;
+            const speed = 0.2;
+            const target = new THREE.Vector3(0, 5, -30);
+            
+            camera.position.x = Math.sin(time * speed) * radius;
+            camera.position.z = Math.cos(time * speed) * radius - 30; 
+            camera.position.y = height + Math.sin(time * 0.5) * 5;
+            
+            camera.lookAt(target);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- Boucle de Jeu ---
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+            prevTime = time;
+
+            if(particles) {
+                particles.rotation.y += 0.001;
+                particles.position.y = Math.sin(time * 0.0005) * 2;
+            }
+
+            if (isCinematic) {
+                updateCinematic(time / 1000);
+            } else if (controls.isLocked) {
+                // --- PHYSIQUE JOUEUR (Saut et Mouvement) ---
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.y -= CONFIG.gravity * delta; 
+
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+
+                if (moveForward || moveBackward) velocity.z -= direction.z * CONFIG.speed * 10.0 * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * CONFIG.speed * 10.0 * delta;
+
+                // Collisions Latérales (Simplifiées)
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+
+                // Collisions Verticales (Nouveau système de saut stable)
+                const feetHeightOffset = playerHeight; // 1.8m
+                const allColliders = [...staticColliders, ...paintBlocks.map(b => b.mesh)];
+
+                raycaster.set(controls.getObject().position, new THREE.Vector3(0, -1, 0));
+                raycaster.far = feetHeightOffset + 0.2; // Vérifier juste sous les pieds
+                
+                const vHits = raycaster.intersectObjects(allColliders, false);
+                let onImpulsePad = false;
+                
+                if (vHits.length > 0) {
+                    const hit = vHits[0];
+                    const distanceToGround = hit.distance;
+                    
+                    if (distanceToGround <= feetHeightOffset + 0.1) {
+                        // Pénétration ou ajustement de hauteur
+                        const penetration = feetHeightOffset - distanceToGround;
+                        
+                        if (penetration > 0.01) {
+                            controls.getObject().position.y += penetration; 
+                        }
+                        
+                        velocity.y = Math.max(0, velocity.y);
+                        canJump = true;
+
+                        // Vérification de la Plateforme d'Impulsion
+                        if (hit.object.userData.isImpulsePad) {
+                            onImpulsePad = true;
+                            // Appliquer l'impulsion seulement si l'on vient de toucher le pad (velocity.y est basse)
+                            if (velocity.y < 1.0) { 
+                                velocity.y = CONFIG.impulseBoost;
+                            }
+                        }
+                    } else {
+                        // Chute libre (si on est trop haut pour la distance Far)
+                        controls.getObject().position.y += velocity.y * delta;
+                        canJump = false; 
+                    }
+                } else {
+                    // Chute libre
+                    controls.getObject().position.y += velocity.y * delta;
+                    canJump = false; 
+                }
+
+
+                // Limite basse (Respawn)
+                if (controls.getObject().position.y < -30) {
+                    controls.unlock(); 
+                    resetLevel(); // Relance le niveau en cours
+                }
+                
+                checkGoal();
+
+            }
+
+            updatePaint(delta);
+            renderer.render(scene, camera);
+        }
+
+    </script>
+</body>
+</html>
