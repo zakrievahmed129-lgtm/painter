@@ -187,7 +187,7 @@
             <div class="controls">
                 <div><span class="key">CLIC GAUCHE</span> PEINDRE</div>
                 <div><span class="key">ZQSD</span> BOUGER</div>
-                <div><span class="key">ESPACE</span> SAUTER</div>
+                <!-- <div><span class="key">ESPACE</span> SAUTER</div> --> <!-- Saut désactivé -->
                 <div><span class="key">SOURIS</span> VISER</div>
             </div>
         </div>
@@ -453,12 +453,14 @@
                     case 'KeyA': case 'ArrowLeft': moveLeft = true; break;
                     case 'KeyS': case 'ArrowDown': moveBackward = true; break;
                     case 'KeyD': case 'ArrowRight': moveRight = true; break;
+                    /* Saut désactivé
                     case 'Space': 
                         if (canJump) { 
                             velocity.y += CONFIG.jumpForce; 
                             canJump = false; 
                         } 
                         break;
+                    */
                 }
             };
             const onKeyUp = (event) => {
@@ -811,7 +813,7 @@
                         }
                         
                         velocity.y = Math.max(0, velocity.y);
-                        canJump = true;
+                        canJump = true; // Permet de sauter si l'on est au sol (même si l'input est désactivé)
 
                         // Vérification de la Plateforme d'Impulsion
                         if (hit.object.userData.isImpulsePad) {
