@@ -11,7 +11,7 @@
             background-color: #050510;
             font-family: 'Courier New', Courier, monospace;
             user-select: none;
-            height: 100vh; /* Correction : Assure que le corps prend toute la hauteur */
+            height: 100vh;
         }
 
         #ui-layer {
@@ -21,9 +21,9 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            display: flex; /* Centrage renforcé */
-            justify-content: center; /* Centre horizontal */
-            align-items: center; /* Centre vertical */
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 20;
         }
 
@@ -59,7 +59,7 @@
             text-align: center;
             pointer-events: auto;
             cursor: pointer;
-            background: rgba(0, 0, 0, 0.85); /* Plus opaque pour le centrage */
+            background: rgba(0, 0, 0, 0.85);
             padding: 40px 60px;
             border: 3px solid #0ff;
             border-radius: 12px;
@@ -67,7 +67,7 @@
             box-shadow: 0 0 50px rgba(0, 255, 255, 0.6), inset 0 0 10px #0ff;
             transition: transform 0.3s, opacity 0.5s;
             max-width: 90%;
-            pointer-events: none; /* Caché par défaut */
+            pointer-events: none;
             opacity: 0;
         }
 
@@ -106,9 +106,10 @@
             margin: 20px auto;
         }
         .level-info strong { color: #fff; text-shadow: 0 0 5px #0ff; }
-        .level-info .feature { color: #ffaa00; font-weight: bold; }
+        .level-info .feature { color: #00ffff; font-weight: bold; }
         .level-info .new-feature { color: #ff00ff; font-weight: bold; text-shadow: 0 0 5px #f0f; }
-
+        .level-info .boost-feature { color: #ffff00; font-weight: bold; text-shadow: 0 0 5px #ff0; }
+        .level-info .danger-feature { color: #f00; font-weight: bold; text-shadow: 0 0 5px #f00; }
 
         .controls {
             display: grid;
@@ -158,6 +159,112 @@
         @keyframes blinker { 50% { opacity: 0; } }
 
         .hidden { display: none !important; }
+
+        /* --- Admin UI --- */
+        #admin-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border: 2px solid #ff00ff;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8), inset 0 0 10px #ff00ff;
+            color: #fff;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 30;
+            pointer-events: auto;
+            max-width: 250px;
+        }
+        #admin-panel h3 {
+            margin: 0 0 10px 0;
+            color: #ff00ff;
+            text-shadow: 0 0 8px #f0f;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            border-bottom: 1px solid #ff00ff;
+            padding-bottom: 5px;
+        }
+        .admin-button {
+            background: linear-gradient(90deg, #ff00ff, #aa00ff);
+            color: #000;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s, box-shadow 0.2s;
+            text-transform: uppercase;
+        }
+        .admin-button:hover { 
+            background: linear-gradient(90deg, #ff55ff, #cc55ff); 
+            box-shadow: 0 0 10px #ff00ff;
+            transform: translateY(-1px);
+        }
+        .admin-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+        .admin-toggle button {
+            background: #444;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s, box-shadow 0.2s;
+            width: 50px;
+        }
+        .admin-toggle button.active {
+            background: #00ff00;
+            color: #000;
+            border-color: #0f0;
+            box-shadow: 0 0 5px #0f0;
+        }
+        .admin-toggle button:hover { background: #666; }
+
+        /* Admin Code Input */
+        #admin-input-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            pointer-events: auto;
+        }
+        #admin-code-input {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #555;
+            color: #0ff;
+            padding: 5px;
+            width: 120px;
+            font-size: 0.8em;
+            border-radius: 4px;
+            margin-right: 5px;
+            transition: border-color 0.3s;
+        }
+        #admin-code-input:focus {
+            border-color: #0ff;
+            outline: none;
+        }
+        #admin-status {
+            color: #f00;
+            font-size: 0.8em;
+            margin-left: 5px;
+            width: 50px;
+            text-align: right;
+            text-shadow: 0 0 3px #f00;
+        }
+        #admin-status.success { 
+            color: #0f0; 
+            text-shadow: 0 0 3px #0f0;
+        }
+
     </style>
 </head>
 <body>
@@ -170,7 +277,7 @@
             <h2>// PROTOCOLE DE CRÉATION DE CHEMIN //</h2>
             <div id="intro-text">
                 <p class="level-info">
-                    <strong>Niveau 1 (Entraînement) :</strong>
+                    <strong>Niveau <span id="current-level-display">1</span> :</strong>
                     <br>Votre système d'encre est en mode <span class="feature">Infini</span>. Utilisez [CLIC GAUCHE] pour créer des plateformes et atteindre le cube orange.
                 </p>
                 <p class="level-info hidden" id="ink-tutorial">
@@ -179,7 +286,7 @@
                 </p>
                 <p class="level-info hidden" id="impulse-tutorial">
                     <strong>Nouveauté : Plateformes d'Impulsion !</strong>
-                    <br>Ces plateformes **Magenta** statiques vous offrent un <span class="new-feature">Méga-Saut</span>. Utilisez-les pour atteindre des hauteurs extrêmes sans utiliser trop d'encre.
+                    <br>Ces plateformes **Magenta** statiques vous offrent un <span class="new-feature">Méga-Saut</span>.
                 </p>
             </div>
             <div class="blink" style="font-size: 1.5em; margin-bottom: 20px; color: #fff;">[ CLIQUER POUR DÉMARRER ]</div>
@@ -187,8 +294,6 @@
             <div class="controls">
                 <div><span class="key">CLIC GAUCHE</span> PEINDRE</div>
                 <div><span class="key">ZQSD</span> BOUGER</div>
-                <!-- <div><span class="key">ESPACE</span> SAUTER</div> --> <!-- Saut désactivé -->
-                <div><span class="key">SOURIS</span> VISER</div>
             </div>
         </div>
 
@@ -201,12 +306,49 @@
 
         <div id="hud">
             <div>NIVEAU: <span id="level-val">1</span></div>
-            <div>SYS: <span style="color:#0f0">ONLINE</span></div>
+            <div>SYS: <span id="sys-status" style="color:#0f0">ONLINE</span></div>
             <div id="ink-display">
                 ENCRE: <span id="ink-val">∞</span>
                 <div id="ink-bar" class="hidden"><div id="ink-fill"></div></div>
             </div>
         </div>
+    </div>
+
+    <!-- Panneau Admin -->
+    <div id="admin-panel">
+        <h3>PANNEAU DE CONTRÔLE CHEAT</h3>
+        <button id="skip-level-button" class="admin-button">SAUTER NIVEAU ACTUEL</button>
+        
+        <div class="admin-toggle">
+            <span>INVINCIBILITÉ</span>
+            <button id="toggle-invincibility">OFF</button>
+        </div>
+
+        <div class="admin-toggle">
+            <span>BLOCS PERMANENTS</span>
+            <button id="toggle-permanent-paint">OFF</button>
+        </div>
+        
+        <div class="admin-toggle">
+            <span>ENCRE INFINIE</span>
+            <button id="toggle-ink">OFF</button>
+        </div>
+        
+        <div class="admin-toggle">
+            <span>GRAVITÉ ZÉRO (VOL)</span>
+            <button id="toggle-gravity">OFF</button>
+        </div>
+
+        <div class="admin-toggle">
+            <span>HYPER-VITESSE (x3)</span>
+            <button id="toggle-speed">OFF</button>
+        </div>
+    </div>
+
+    <!-- Champ de Code Secret -->
+    <div id="admin-input-container">
+        <input type="password" id="admin-code-input" placeholder="Code Admin...">
+        <span id="admin-status"></span>
     </div>
 
     <script type="importmap">
@@ -227,31 +369,52 @@
             paintDistance: 6.0,
             blockSize: 3.0,
             blockLife: 5.0,
-            gravity: 16.0, 
-            jumpForce: 12.0, 
-            speed: 6.0,
+            evanescentBlockLife: 1.5, // Nouvelle constante : vie très courte
+            plasmaWallColor: 0xff4444, // Nouvelle couleur : Mur Plasma (Rouge)
+            baseGravity: 16.0, 
+            baseJumpForce: 12.0, 
+            baseSpeed: 6.0,
             paintRate: 0.08,
             fogColor: 0x050515,
             inkConsumption: 5.0, 
             goalProximity: 5.0,
-            impulseBoost: 25.0, // Force du saut de la plateforme d'impulsion
+            impulseBoost: 25.0,
         };
         
-        // --- Configuration des Niveaux (6 niveaux) ---
-        // Note: 'distance' et 'height' sont pour le cube objectif
+        // --- Variables Admin Modifiables ---
+        let currentGravity = CONFIG.baseGravity;
+        let currentSpeed = CONFIG.baseSpeed;
+        let currentJumpForce = CONFIG.baseJumpForce; 
+        let adminCheats = {
+            infiniteInk: false,
+            zeroGravity: false,
+            hyperSpeed: false,
+            superJump: false, 
+            invincible: false,
+            permanentPaint: false,
+            adminModeActive: false
+        };
+
+        // --- Configuration des Niveaux (12 niveaux) ---
+        // Ajout de 'evanescentBlocks' et 'plasmaWalls'
         const LevelConfig = [
-            // Level 1: Entraînement - Encre Infinie
-            { distance: 60, height: 10, inkCapacity: Infinity, inkRegenRate: 0, speed: 6.0, feature: "Bienvenue. Système d'encre en mode illimité.", impulsePads: 0, showInkTutorial: true, showImpulseTutorial: false }, 
-            // Level 2: Introduction de la limitation d'encre
-            { distance: 80, height: 15, inkCapacity: 150, inkRegenRate: 30, speed: 7.0, feature: "Débloqué : <span class='feature'>Capacité d'Encre (150)</span>. L'encre se régénère à un taux plus rapide.", impulsePads: 0, showInkTutorial: false, showImpulseTutorial: false },
-            // Level 3: Difficulté accrue
-            { distance: 100, height: 20, inkCapacity: 180, inkRegenRate: 35, speed: 8.0, feature: "Augmentation de la Capacité d'Encre (180) et de la vitesse de mouvement.", impulsePads: 0, showInkTutorial: false, showImpulseTutorial: false },
-            // Level 4: Environnement plus sombre / Obstacles
-            { distance: 120, height: 25, inkCapacity: 220, inkRegenRate: 40, speed: 9.0, feature: "Le défi est plus long et plus haut. Capacité d'Encre augmentée (220).", impulsePads: 0, showInkTutorial: false, showImpulseTutorial: false },
-            // Level 5: Introduction des Plateformes d'Impulsion
-            { distance: 150, height: 30, inkCapacity: 200, inkRegenRate: 30, speed: 8.0, feature: "Nouveauté : <span class='new-feature'>Plateformes d'Impulsion</span> (Magenta) apparaissent. Utilisez-les !", impulsePads: 3, showInkTutorial: false, showImpulseTutorial: true },
-            // Level 6: Défis Combinés (Finale)
-            { distance: 180, height: 40, inkCapacity: 250, inkRegenRate: 45, speed: 9.5, feature: "Défis Combinés. Utilisez votre encre et les impulsions pour la plus haute ascension.", impulsePads: 5, showInkTutorial: false, showImpulseTutorial: false },
+            // Niveaux 1-4 : Introduction
+            { id: 1, distance: 60, height: 10, inkCapacity: Infinity, inkRegenRate: 0, baseSpeed: 6.0, feature: "Bienvenue. Système d'encre en mode illimité.", impulsePads: 0, evanescentBlocks: 0, plasmaWalls: 0, gravityMultiplier: 1.0, dynamicGoalLight: false, inkBoostZones: [], showInkTutorial: true, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false }, 
+            { id: 2, distance: 80, height: 15, inkCapacity: 150, inkRegenRate: 30, baseSpeed: 7.0, feature: "Débloqué : <span class='feature'>Capacité d'Encre (150)</span>. L'encre se régénère à un taux plus rapide.", impulsePads: 0, evanescentBlocks: 0, plasmaWalls: 0, gravityMultiplier: 1.0, dynamicGoalLight: false, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false },
+            { id: 3, distance: 100, height: 20, inkCapacity: 180, inkRegenRate: 35, baseSpeed: 8.0, feature: "Nouveauté : <span class='feature'>Gravité Accrue (1.25x)</span>. Capacité d'Encre augmentée (180).", impulsePads: 0, evanescentBlocks: 0, plasmaWalls: 0, gravityMultiplier: 1.25, dynamicGoalLight: false, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false },
+            { id: 4, distance: 120, height: 25, inkCapacity: 220, inkRegenRate: 40, baseSpeed: 9.0, feature: "Nouveauté : <span class='feature'>Signal Cible Fluctuant</span>. La lumière du cube objectif pulse, rendant la visibilité intermittente.", impulsePads: 0, evanescentBlocks: 0, plasmaWalls: 0, gravityMultiplier: 1.25, dynamicGoalLight: true, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false },
+            
+            // Niveaux 5-8 : Impulsion et Évanescence
+            { id: 5, distance: 150, height: 30, inkCapacity: 200, inkRegenRate: 30, baseSpeed: 8.0, feature: "Défis Combinés : <span class='new-feature'>Impulsion</span> (Magenta) et signal fluctuant.", impulsePads: 3, evanescentBlocks: 0, plasmaWalls: 0, gravityMultiplier: 1.0, dynamicGoalLight: true, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: true, showEvanescentTutorial: false, showPlasmaTutorial: false },
+            { id: 6, distance: 180, height: 35, inkCapacity: 180, inkRegenRate: 45, baseSpeed: 9.5, feature: "Nouveauté : <span class='danger-feature'>Plateformes Évanescentes</span>. Ces blocs s'évaporent TRES rapidement (Rouge/Orange).", impulsePads: 3, evanescentBlocks: 5, plasmaWalls: 0, gravityMultiplier: 1.0, dynamicGoalLight: true, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: true, showPlasmaTutorial: false },
+            { id: 7, distance: 200, height: 40, inkCapacity: 250, inkRegenRate: 40, baseSpeed: 9.0, feature: "Combiné : Évanescentes, Impulsions et <span class='new-feature'>Gravité Accrue (1.2x)</span>.", impulsePads: 5, evanescentBlocks: 7, plasmaWalls: 0, gravityMultiplier: 1.2, dynamicGoalLight: true, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false },
+            { id: 8, distance: 220, height: 50, inkCapacity: 220, inkRegenRate: 50, baseSpeed: 10.0, feature: "Nouveauté : <span class='boost-feature'>Zone de Recharge Rapide</span> (Anneau Jaune). Utilisez-la pour contrer les Évanescentes.", impulsePads: 5, evanescentBlocks: 5, plasmaWalls: 0, gravityMultiplier: 1.2, dynamicGoalLight: true, inkBoostZones: [{x: 0, y: 10, z: -50}, {x: 30, y: 25, z: -120}], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false },
+
+            // Niveaux 9-12 : Murs de Plasma et Maîtrise
+            { id: 9, distance: 250, height: 60, inkCapacity: 250, inkRegenRate: 40, baseSpeed: 10.5, feature: "Nouveauté : <span class='danger-feature'>Murs de Plasma</span> (Rouge Brillant). Ces murs sont infranchissables. Trouvez un chemin !", impulsePads: 0, evanescentBlocks: 0, plasmaWalls: 5, gravityMultiplier: 1.0, dynamicGoalLight: false, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: true },
+            { id: 10, distance: 280, height: 70, inkCapacity: 300, inkRegenRate: 35, baseSpeed: 11.0, feature: "Défi Labyrinthe : Murs de Plasma complexes, combinés à <span class='new-feature'>Gravité Forte (1.3x)</span>.", impulsePads: 0, evanescentBlocks: 0, plasmaWalls: 8, gravityMultiplier: 1.3, dynamicGoalLight: false, inkBoostZones: [], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false },
+            { id: 11, distance: 300, height: 80, inkCapacity: 200, inkRegenRate: 50, baseSpeed: 10.5, feature: "Maîtrise du Temps : Évanescentes, Impulsions et Murs de Plasma. <span class='boost-feature'>Recharge Rapide</span> disponible.", impulsePads: 8, evanescentBlocks: 10, plasmaWalls: 5, gravityMultiplier: 1.2, dynamicGoalLight: true, inkBoostZones: [{x: -40, y: 40, z: -100}, {x: 40, y: 60, z: -200}], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false },
+            { id: 12, distance: 350, height: 90, inkCapacity: 280, inkRegenRate: 45, baseSpeed: 11.5, feature: "PROTOCOLE FINAL : Tous les modificateurs activés. Bonne chance, Agent !", impulsePads: 10, evanescentBlocks: 12, plasmaWalls: 10, gravityMultiplier: 1.4, dynamicGoalLight: true, inkBoostZones: [{x: 0, y: 50, z: -150}, {x: -60, y: 70, z: -250}, {x: 60, y: 20, z: -80}], showInkTutorial: false, showImpulseTutorial: false, showEvanescentTutorial: false, showPlasmaTutorial: false }
         ];
 
 
@@ -272,13 +435,15 @@
         
         // Objets 3D
         const paintBlocks = [];
-        const staticColliders = []; // Inclut le sol, la plateforme d'arrivée, et les Impulse Pads
+        const staticColliders = [];
+        const boostZones = [];
         let raycaster;
         let playerHeight = 1.8;
         let particles;
         let goalCube;
         let goalLight;
-        const impulsePads = []; // Pour la détection de collision des Impulse Pads
+        const impulsePads = [];
+        const plasmaWalls = []; // Nouvelle liste pour les murs
 
         // Cinématique & UI
         let isCinematic = true;
@@ -290,10 +455,116 @@
         const hud = document.getElementById('hud');
         const inkBar = document.getElementById('ink-bar');
         const inkFill = document.getElementById('ink-fill');
+        const adminPanel = document.getElementById('admin-panel');
+        const adminCodeInput = document.getElementById('admin-code-input');
+        const adminStatus = document.getElementById('admin-status');
 
         init();
         animate();
 
+        // --- Fonctions Admin ---
+
+        const ADMIN_CODE = "CHRONOS";
+
+        adminCodeInput.addEventListener('change', () => {
+            if (adminCodeInput.value === ADMIN_CODE) {
+                adminStatus.textContent = "OK";
+                adminStatus.classList.add('success');
+                adminCheats.adminModeActive = true;
+                adminPanel.style.display = 'flex';
+                adminCodeInput.style.borderColor = '#0f0';
+            } else {
+                adminStatus.textContent = "FAIL";
+                adminStatus.classList.remove('success');
+                adminPanel.style.display = 'none';
+                adminCheats.adminModeActive = false;
+            }
+        });
+        
+        document.getElementById('skip-level-button').addEventListener('click', () => {
+            if (adminCheats.adminModeActive) {
+                if (controls.isLocked) controls.unlock();
+                
+                let nextLevelIndex = currentLevel + 1;
+                
+                if (nextLevelIndex < LevelConfig.length) {
+                    currentLevel = nextLevelIndex;
+                    
+                    // Utiliser la même logique que checkGoal() pour afficher l'écran de fin de niveau
+                    const nextConfig = LevelConfig[currentLevel];
+                    document.getElementById('next-level-text').textContent = `Niveau ${currentLevel + 1} débloqué (ADMIN) !`;
+                    document.getElementById('next-level-feature').innerHTML = `<strong>Nouvelles règles :</strong> ${nextConfig.feature}`;
+                    
+                    // S'assurer que le menu principal est masqué avant d'afficher l'écran de fin de niveau
+                    titleCard.classList.remove('active'); 
+                    levelCompleteCard.classList.add('active');
+                    
+                } else {
+                    // Fin du jeu
+                    // S'assurer que l'écran de fin de niveau est masqué avant d'afficher le menu principal
+                    levelCompleteCard.classList.remove('active'); 
+                    titleCard.classList.add('active');
+                    document.getElementById('intro-text').innerHTML = "<h2>PROTOCOLE TERMINÉ !</h2><p class='level-info'>Admin : Niveau max atteint. Merci d'avoir joué !</p>";
+                    currentLevel = LevelConfig.length - 1; // Rester au dernier niveau
+                }
+            }
+        });
+
+        // Toggle Encre Infinie
+        document.getElementById('toggle-ink').addEventListener('click', (e) => {
+            adminCheats.infiniteInk = !adminCheats.infiniteInk;
+            e.target.textContent = adminCheats.infiniteInk ? 'ON' : 'OFF';
+            e.target.classList.toggle('active', adminCheats.infiniteInk);
+            if (adminCheats.infiniteInk) {
+                currentInk = Infinity;
+                maxInk = Infinity;
+            } else {
+                resetLevel(); // Rétablir les limites du niveau
+            }
+            updateHUD();
+        });
+
+        // Toggle Gravité Zéro
+        document.getElementById('toggle-gravity').addEventListener('click', (e) => {
+            adminCheats.zeroGravity = !adminCheats.zeroGravity;
+            e.target.textContent = adminCheats.zeroGravity ? 'ON' : 'OFF';
+            e.target.classList.toggle('active', adminCheats.zeroGravity);
+            currentGravity = adminCheats.zeroGravity ? 0.01 : CONFIG.baseGravity;
+            document.getElementById('sys-status').textContent = adminCheats.zeroGravity ? 'VOL LIBRE' : (adminCheats.invincible ? 'INVINCIBLE' : 'ONLINE');
+            document.getElementById('sys-status').style.color = adminCheats.zeroGravity ? '#ff00ff' : (adminCheats.invincible ? '#ffaa00' : '#0f0');
+        });
+
+        // Toggle Hyper Vitesse
+        document.getElementById('toggle-speed').addEventListener('click', (e) => {
+            adminCheats.hyperSpeed = !adminCheats.hyperSpeed;
+            e.target.textContent = adminCheats.hyperSpeed ? 'ON' : 'OFF';
+            e.target.classList.toggle('active', adminCheats.hyperSpeed);
+            currentSpeed = adminCheats.hyperSpeed ? CONFIG.baseSpeed * 3 : LevelConfig[currentLevel].baseSpeed;
+        });
+
+        // Toggle Invincibilité (Pas de chute/respawn)
+        document.getElementById('toggle-invincibility').addEventListener('click', (e) => {
+            adminCheats.invincible = !adminCheats.invincible;
+            e.target.textContent = adminCheats.invincible ? 'ON' : 'OFF';
+            e.target.classList.toggle('active', adminCheats.invincible);
+            document.getElementById('sys-status').textContent = adminCheats.invincible ? 'INVINCIBLE' : (adminCheats.zeroGravity ? 'VOL LIBRE' : 'ONLINE');
+            document.getElementById('sys-status').style.color = adminCheats.invincible ? '#ffaa00' : (adminCheats.zeroGravity ? '#ff00ff' : '#0f0');
+        });
+
+        // Toggle Blocs Permanents
+        document.getElementById('toggle-permanent-paint').addEventListener('click', (e) => {
+            adminCheats.permanentPaint = !adminCheats.permanentPaint;
+            e.target.textContent = adminCheats.permanentPaint ? 'ON' : 'OFF';
+            e.target.classList.toggle('active', adminCheats.permanentPaint);
+            // Si on désactive les blocs permanents, il faut réactiver la durée de vie des blocs existants
+            if (!adminCheats.permanentPaint) {
+                paintBlocks.forEach(b => {
+                    // Les blocs normaux récupèrent leur vie normale, les blocs évanescents leur vie courte
+                    b.life = b.isEvanescent ? CONFIG.evanescentBlockLife : b.maxLife; 
+                });
+            }
+        });
+        
         // --- Fonctions Utilitaires ---
 
         function generateGridTexture() {
@@ -318,53 +589,88 @@
 
         function updateHUD() {
             document.getElementById('level-val').textContent = currentLevel + 1;
+            document.getElementById('current-level-display').textContent = currentLevel + 1;
 
-            if (maxInk === Infinity) {
+
+            const inkLimit = adminCheats.infiniteInk ? Infinity : maxInk;
+
+            if (inkLimit === Infinity) {
                 document.getElementById('ink-val').textContent = '∞';
                 inkBar.classList.add('hidden');
             } else {
-                document.getElementById('ink-val').textContent = `${Math.floor(currentInk)} / ${maxInk}`;
+                document.getElementById('ink-val').textContent = `${Math.floor(currentInk)} / ${inkLimit}`;
                 inkBar.classList.remove('hidden');
-                inkFill.style.width = `${(currentInk / maxInk) * 100}%`;
-                inkFill.style.backgroundColor = (currentInk < CONFIG.inkConsumption) ? '#ff0000' : (currentInk < maxInk * 0.2 ? '#ffff00' : '');
+                inkFill.style.width = `${(currentInk / inkLimit) * 100}%`;
+                inkFill.style.backgroundColor = (currentInk < CONFIG.inkConsumption) ? '#ff0000' : (currentInk < inkLimit * 0.2 ? '#ffff00' : '');
             }
         }
 
         function resetLevel() {
-            // Supprimer les objets dynamiques (plateformes et impulsions)
-            paintBlocks.forEach(b => {
-                scene.remove(b.mesh);
-                b.mesh.geometry.dispose();
-                b.mesh.material.dispose();
-            });
+            // Supprimer les objets dynamiques
+            paintBlocks.forEach(b => { scene.remove(b.mesh); b.mesh.geometry.dispose(); b.mesh.material.dispose(); });
             paintBlocks.length = 0;
 
-            impulsePads.forEach(pad => {
-                scene.remove(pad);
-                pad.geometry.dispose();
-                pad.material.dispose();
-            });
+            impulsePads.forEach(pad => { scene.remove(pad); pad.geometry.dispose(); pad.material.dispose(); });
             impulsePads.length = 0;
-            staticColliders.length = 0; // Réinitialisé avant de recréer le niveau
 
-            // Réinitialiser la position du joueur (déclenché par lock event)
+            plasmaWalls.forEach(wall => { scene.remove(wall); wall.geometry.dispose(); wall.material.dispose(); });
+            plasmaWalls.length = 0;
+
+            boostZones.forEach(zone => {
+                scene.remove(zone);
+                zone.traverse(child => {
+                    if (child.isMesh) { child.geometry.dispose(); child.material.dispose(); }
+                    if (child.isLight) { child.dispose(); }
+                });
+            });
+            boostZones.length = 0;
+            staticColliders.length = 0;
+
             velocity.set(0, 0, 0);
             
             // Recharger la configuration du niveau
             const config = LevelConfig[currentLevel];
-            maxInk = config.inkCapacity;
+
+            // Appliquer les cheats si actifs, sinon utiliser la config du niveau
+            maxInk = adminCheats.infiniteInk ? Infinity : config.inkCapacity;
             currentInk = maxInk === Infinity ? Infinity : maxInk;
             inkRegenRate = config.inkRegenRate;
-            CONFIG.speed = config.speed;
-
+            currentSpeed = adminCheats.hyperSpeed ? CONFIG.baseSpeed * 3 : config.baseSpeed;
+            currentJumpForce = CONFIG.baseJumpForce; 
+            
             // Mettre à jour les tutoriels
             document.getElementById('ink-tutorial').classList.toggle('hidden', !config.showInkTutorial);
             document.getElementById('impulse-tutorial').classList.toggle('hidden', !config.showImpulseTutorial);
+            
+            // Nouveaux tutoriels
+            const evanescentTutorial = document.getElementById('intro-text').querySelector('#evanescent-tutorial') || createTutorialElement('evanescent-tutorial', "Nouveauté : Plateformes Évanescentes !", "Ces blocs <span class='danger-feature'>Rouge/Orange</span> s'évaporent très rapidement. Ne perdez pas de temps !");
+            evanescentTutorial.classList.toggle('hidden', !config.showEvanescentTutorial);
+            
+            const plasmaTutorial = document.getElementById('intro-text').querySelector('#plasma-tutorial') || createTutorialElement('plasma-tutorial', "Nouveauté : Murs de Plasma !", "Ces murs <span class='danger-feature'>Rouge Vif</span> sont des obstacles statiques infranchissables. Vous ne pouvez pas peindre dessus.");
+            plasmaTutorial.classList.toggle('hidden', !config.showPlasmaTutorial);
 
             // Créer le nouveau niveau
             createLevel();
             updateHUD();
+            
+            // Rétablir la gravité/vitesse si un cheat est actif
+            currentGravity = adminCheats.zeroGravity ? 0.01 : CONFIG.baseGravity * config.gravityMultiplier;
+            currentSpeed = adminCheats.hyperSpeed ? CONFIG.baseSpeed * 3 : config.baseSpeed;
         }
+        
+        function createTutorialElement(id, title, content) {
+            const container = document.getElementById('intro-text');
+            const existing = document.getElementById(id);
+            if (existing) return existing;
+            
+            const p = document.createElement('p');
+            p.className = 'level-info hidden';
+            p.id = id;
+            p.innerHTML = `<strong>${title}</strong><br>${content}`;
+            container.appendChild(p);
+            return p;
+        }
+
 
         // --- Initialisation THREE.js ---
 
@@ -409,6 +715,8 @@
 
             // Gestionnaires d'événements UI
             titleCard.addEventListener('click', () => {
+                // S'assurer que les deux cartes ne sont pas actives en même temps au démarrage
+                levelCompleteCard.classList.remove('active');
                 titleCard.classList.remove('active');
                 controls.lock();
             });
@@ -416,13 +724,16 @@
             levelCompleteCard.addEventListener('click', () => {
                 levelCompleteCard.classList.remove('active');
                 if (currentLevel < LevelConfig.length) {
-                    // Préparer le prochain niveau, puis relocker
                     resetLevel(); 
                     controls.lock();
                 } else {
                     // Fin du jeu
+                    // S'assurer que l'écran de fin de niveau est masqué avant d'afficher le menu principal
+                    levelCompleteCard.classList.remove('active'); 
                     titleCard.classList.add('active');
                     document.getElementById('intro-text').innerHTML = "<h2>PROTOCOLE TERMINÉ !</h2><p class='level-info'>Félicitations, agent. Vous avez maîtrisé le Chrono-Painting et achevé tous les défis du simulateur. Merci d'avoir joué !</p>";
+                    currentLevel = LevelConfig.length - 1; // Permet de rejouer le dernier niveau
+                    updateHUD();
                 }
             });
 
@@ -431,13 +742,20 @@
                 hud.style.display = 'block';
                 crosshair.style.opacity = '1';
                 
-                // Positionnement correct sur la plateforme de départ (Surface à Y=-0.5)
-                camera.position.set(0, 1.3, 0); 
-                camera.lookAt(0, 1.3, -10);
+                // Positionnement correct sur la plateforme de départ
+                camera.position.set(0, playerHeight / 2 + 0.5, 0); 
+                camera.lookAt(0, playerHeight / 2 + 0.5, -10);
+                
+                // S'assurer que le menu est caché quand le jeu démarre
+                titleCard.classList.remove('active');
+                levelCompleteCard.classList.remove('active');
             });
 
             controls.addEventListener('unlock', () => {
                 isCinematic = true; 
+                // Vérifier si le levelCompleteCard est actif. Si ce n'est pas le cas, 
+                // alors c'est un 'unlock' dû à une chute ou un admin skip qui renvoie au menu principal.
+                // On empêche titleCard de s'activer si levelCompleteCard est déjà visible.
                 if (!levelCompleteCard.classList.contains('active')) {
                      titleCard.classList.add('active');
                 }
@@ -453,14 +771,13 @@
                     case 'KeyA': case 'ArrowLeft': moveLeft = true; break;
                     case 'KeyS': case 'ArrowDown': moveBackward = true; break;
                     case 'KeyD': case 'ArrowRight': moveRight = true; break;
-                    /* Saut désactivé
                     case 'Space': 
-                        if (canJump) { 
-                            velocity.y += CONFIG.jumpForce; 
+                        // Saut actif uniquement en mode gravité normale (sans cheat Gravité Zéro)
+                        if (canJump && !adminCheats.zeroGravity) { 
+                            velocity.y += currentJumpForce; 
                             canJump = false; 
                         } 
                         break;
-                    */
                 }
             };
             const onKeyUp = (event) => {
@@ -486,7 +803,7 @@
         }
 
         function createEnvironment() {
-            // Étoiles
+            // Étoiles et Particules (voir fichier précédent pour le détail)
             const starsGeo = new THREE.BufferGeometry();
             const starsCount = 2000;
             const posArray = new Float32Array(starsCount * 3);
@@ -498,12 +815,10 @@
             const stars = new THREE.Points(starsGeo, starsMat);
             scene.add(stars);
 
-            // Grille de fond
-            const gridHelper = new THREE.GridHelper(200, 50, 0x004444, 0x001111);
+            const gridHelper = new THREE.GridHelper(500, 100, 0x004444, 0x001111);
             gridHelper.position.y = -20;
             scene.add(gridHelper);
 
-            // Particules flottantes
             const particlesGeo = new THREE.BufferGeometry();
             const pCount = 200;
             const pPos = new Float32Array(pCount * 3);
@@ -533,13 +848,60 @@
                 opacity: 0.9
             });
             const pad = new THREE.Mesh(geometry, material);
-            pad.position.set(x, y + 0.25, z); // Centre la plateforme sur Y=y
+            pad.position.set(x, y + 0.25, z);
             pad.userData.isImpulsePad = true;
             pad.castShadow = true;
             pad.receiveShadow = true;
             scene.add(pad);
             impulsePads.push(pad);
-            staticColliders.push(pad); // C'est un collider statique
+            staticColliders.push(pad);
+        }
+
+        function createPlasmaWall(width, height, depth, x, y, z) {
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+            const material = new THREE.MeshStandardMaterial({
+                color: CONFIG.plasmaWallColor, 
+                emissive: CONFIG.plasmaWallColor,
+                emissiveIntensity: 3.0,
+                metalness: 0.1,
+                roughness: 0.9,
+                transparent: true,
+                opacity: 0.9
+            });
+            const wall = new THREE.Mesh(geometry, material);
+            wall.position.set(x, y + height / 2, z);
+            wall.userData.isPlasmaWall = true;
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            scene.add(wall);
+            plasmaWalls.push(wall);
+            staticColliders.push(wall);
+        }
+
+
+        function createInkBoostZone(x, y, z) {
+            const geometry = new THREE.TorusGeometry(3, 0.5, 16, 100);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xffff00,
+                emissive: 0xffff00,
+                emissiveIntensity: 2.5,
+                metalness: 0.9,
+                roughness: 0.1,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(geometry, material);
+            ring.position.set(x, y, z);
+            ring.rotation.x = Math.PI / 2;
+            ring.userData.isBoostZone = true;
+            
+            const light = new THREE.PointLight(0xffff00, 5, 15);
+            light.position.set(0, 0, 0);
+            ring.add(light);
+            
+            scene.add(ring);
+            boostZones.push(ring);
         }
 
 
@@ -577,7 +939,7 @@
             // Goal Platform
             const goalGeo = new THREE.BoxGeometry(8, 1, 8);
             const goalPlatform = new THREE.Mesh(goalGeo, matFloor);
-            goalPlatform.position.set(0, goalY - 0.5, goalZ); // Surface à goalY
+            goalPlatform.position.set(0, goalY - 0.5, goalZ);
             goalPlatform.receiveShadow = true;
             scene.add(goalPlatform);
             staticColliders.push(goalPlatform);
@@ -597,18 +959,34 @@
             goalLight.position.copy(goalCube.position);
             scene.add(goalLight);
 
-            // --- Génération des Impulse Pads (à partir du Niveau 5) ---
-            if (config.impulsePads > 0) {
-                for (let i = 0; i < config.impulsePads; i++) {
-                    // Positionnement aléatoire entre Z=-10 et Z=goalZ, Y entre 0 et goalY
-                    const x = (Math.random() - 0.5) * 30; // -15 à 15
-                    const y = Math.max(0, Math.random() * goalY * 0.8);
-                    const z = -(Math.random() * (config.distance - 20) + 10); // -10 à -(distance-10)
-                    createImpulsePad(x, y, z);
-                }
+            // --- Génération des Impulse Pads ---
+            for (let i = 0; i < config.impulsePads; i++) {
+                const x = (Math.random() - 0.5) * 40;
+                const y = Math.max(0, Math.random() * goalY * 0.8);
+                const z = -(Math.random() * (config.distance - 20) + 10);
+                createImpulsePad(x, y, z);
             }
 
+            // --- Génération des Murs de Plasma ---
+            for (let i = 0; i < config.plasmaWalls; i++) {
+                const x = (Math.random() - 0.5) * 40;
+                const y = Math.max(0, Math.random() * goalY * 0.6);
+                const z = -(Math.random() * (config.distance - 20) + 10);
+                const wallType = Math.random() > 0.5 ? 'width' : 'depth';
+                let width = wallType === 'width' ? 10 : 1;
+                let depth = wallType === 'depth' ? 10 : 1;
+                let height = Math.random() * 5 + 3;
+                
+                createPlasmaWall(width, height, depth, x, y, z);
+            }
 
+            // --- Génération des Zones de Recharge Rapide ---
+            if (config.inkBoostZones && config.inkBoostZones.length > 0) {
+                config.inkBoostZones.forEach(pos => {
+                    createInkBoostZone(pos.x, pos.y, pos.z);
+                });
+            }
+            
             // Animation du cube
             const animateCube = () => {
                 if (goalCube) {
@@ -621,8 +999,8 @@
         }
 
         function createPaintBlock() {
-            if (maxInk !== Infinity && currentInk < CONFIG.inkConsumption) {
-                // Pas assez d'encre !
+            // Vérification de l'encre (ignorée si cheat est actif)
+            if (!adminCheats.infiniteInk && maxInk !== Infinity && currentInk < CONFIG.inkConsumption) {
                 return; 
             }
 
@@ -632,12 +1010,34 @@
             spawnPos.copy(camera.position).add(direction.multiplyScalar(CONFIG.paintDistance));
             spawnPos.y -= 1.5; 
 
+            // Intersection check: Prevent painting inside Plasma Walls
+            const tempBox = new THREE.Box3().setFromCenterAndSize(
+                spawnPos, new THREE.Vector3(CONFIG.blockSize, 1.0, CONFIG.blockSize)
+            );
+            
+            const isBlocked = plasmaWalls.some(wall => {
+                const wallBox = new THREE.Box3().setFromObject(wall);
+                return tempBox.intersectsBox(wallBox);
+            });
+
+            if (isBlocked) {
+                console.log("Tentative de peindre dans un Mur de Plasma bloquée.");
+                return; 
+            }
+
+            // 1/3 chance de créer un bloc évanescent à partir du niveau 6
+            const isEvanescent = currentLevel >= 5 && Math.random() < 0.33; 
+
             const geometry = new THREE.BoxGeometry(CONFIG.blockSize, 1.0, CONFIG.blockSize);
+            
+            let color = isEvanescent ? 0xff8800 : 0x00ffff;
+            let emissiveColor = isEvanescent ? 0xaa4400 : 0x0088aa;
+
             const material = new THREE.MeshStandardMaterial({ 
-                color: 0x00ffff, 
+                color: color, 
                 transparent: true, 
                 opacity: 0.9,
-                emissive: 0x0088aa,
+                emissive: emissiveColor,
                 emissiveIntensity: 1.0,
                 roughness: 0.1
             });
@@ -652,22 +1052,43 @@
             block.receiveShadow = true;
 
             scene.add(block);
-            paintBlocks.push({ mesh: block, life: CONFIG.blockLife, maxLife: CONFIG.blockLife });
+            
+            // Définir la vie du bloc
+            let life = CONFIG.blockLife;
+            if (isEvanescent) {
+                life = CONFIG.evanescentBlockLife;
+            }
+            // Si le cheat permanentPaint est actif, la vie est infinie
+            if (adminCheats.permanentPaint) {
+                life = Infinity;
+            }
+            
+            paintBlocks.push({ 
+                mesh: block, 
+                life: life, 
+                maxLife: isEvanescent ? CONFIG.evanescentBlockLife : CONFIG.blockLife,
+                isEvanescent: isEvanescent // Nouvelle propriété pour distinguer
+            });
 
-            // Consommation d'encre
-            if (maxInk !== Infinity) {
+            // Consommation d'encre (ignorée si cheat est actif)
+            if (!adminCheats.infiniteInk && maxInk !== Infinity) {
                 currentInk -= CONFIG.inkConsumption;
             }
         }
 
         function updatePaint(delta) {
             // 1. Encre et Régénération
-            if (maxInk !== Infinity && controls.isLocked) {
-                if (!isPainting && currentInk < maxInk) {
-                    currentInk = Math.min(maxInk, currentInk + inkRegenRate * delta);
+            const inkLimit = adminCheats.infiniteInk ? Infinity : maxInk;
+
+            if (inkLimit !== Infinity && controls.isLocked) {
+                if (!isPainting && currentInk < inkLimit) {
+                    currentInk = Math.min(inkLimit, currentInk + inkRegenRate * delta);
                 }
                 updateHUD();
+            } else if (adminCheats.infiniteInk) {
+                updateHUD(); // Mettre à jour pour afficher l'infini
             }
+
 
             // 2. Création de blocs
             if (isPainting && !isCinematic) {
@@ -683,20 +1104,35 @@
             // 3. Vie des blocs
             for (let i = paintBlocks.length - 1; i >= 0; i--) {
                 const b = paintBlocks[i];
+                
+                // Si le cheat est actif, ne rien faire
+                if (adminCheats.permanentPaint && b.life === Infinity) {
+                    continue; 
+                }
+
                 b.life -= delta;
                 const ratio = b.life / b.maxLife;
                 
-                // Couleur: Cyan -> Jaune -> Rouge (indicateur de dégradation)
-                const hue = ratio * 0.16 + 0.5; 
-                if (ratio < 0.2) {
-                     b.mesh.material.color.setHSL(0, 1.0, 0.5); // Rouge
-                     b.mesh.material.emissive.setHSL(0, 1.0, 0.5);
+                // Mise à jour de la couleur/opacité/échelle en fonction du ratio
+                if (b.isEvanescent) {
+                    // Bloc Evanescent (Rouge/Orange, disparaît vite)
+                    b.mesh.material.color.set(0xff8800);
+                    b.mesh.material.emissive.set(0xaa4400);
+                    b.mesh.material.opacity = Math.max(0, ratio * 0.9);
+                    b.mesh.scale.setScalar(ratio < 0.5 ? ratio / 0.5 : 1.0); 
                 } else {
-                     b.mesh.material.color.setHSL(hue, 1.0, 0.5); 
-                     b.mesh.material.emissive.setHSL(hue, 1.0, 0.5);
+                    // Bloc normal (Cyan -> Rouge)
+                    const hue = ratio * 0.16 + 0.5; 
+                    if (ratio < 0.2) {
+                         b.mesh.material.color.setHSL(0, 1.0, 0.5);
+                         b.mesh.material.emissive.setHSL(0, 1.0, 0.5);
+                    } else {
+                         b.mesh.material.color.setHSL(hue, 1.0, 0.5); 
+                         b.mesh.material.emissive.setHSL(hue, 1.0, 0.5);
+                    }
+                    b.mesh.scale.setScalar(ratio < 0.2 ? ratio / 0.2 : 1.0);
                 }
-
-                if (ratio < 0.2) b.mesh.scale.setScalar(ratio / 0.2);
+                
 
                 if (b.life <= 0) {
                     scene.remove(b.mesh);
@@ -713,26 +1149,26 @@
             const playerPos = controls.getObject().position;
             const goalPos = goalCube.position;
             
-            // On vérifie la distance dans le plan horizontal (XZ)
+            // Vérifie la distance
             const distance = playerPos.distanceTo(goalPos);
 
             if (distance < CONFIG.goalProximity) {
-                // Vérifier la hauteur pour éviter de gagner en étant en dessous
                 if (playerPos.y > goalPos.y - 5.0) { 
                     controls.unlock();
                     
+                    // S'assurer que le menu principal est masqué
+                    titleCard.classList.remove('active');
+
                     currentLevel++;
                     if (currentLevel < LevelConfig.length) {
-                        // Niveau suivant
                         const nextConfig = LevelConfig[currentLevel];
                         document.getElementById('next-level-text').textContent = `Niveau ${currentLevel + 1} débloqué !`;
                         document.getElementById('next-level-feature').innerHTML = `<strong>Nouvelles règles :</strong> ${nextConfig.feature}`;
                         levelCompleteCard.classList.add('active');
                     } else {
-                        // Jeu terminé
                         levelCompleteCard.classList.add('active');
                         document.getElementById('next-level-text').textContent = `Félicitations, agent !`;
-                        document.getElementById('next-level-feature').innerHTML = `<strong>PROTOCOLE TERMINÉ.</strong> Vous avez réussi tous les niveaux.`;
+                        document.getElementById('next-level-feature').innerHTML = `<strong>PROTOCOLE TERMINÉ.</strong> Vous avez réussi les ${LevelConfig.length} niveaux.`;
                     }
                 }
             }
@@ -774,38 +1210,80 @@
             if (isCinematic) {
                 updateCinematic(time / 1000);
             } else if (controls.isLocked) {
+                
+                // Mettre à jour la vitesse basée sur l'état admin
+                const currentMoveSpeed = currentSpeed * 10.0;
+
+                const config = LevelConfig[currentLevel];
+                // Utiliser la gravité du niveau SANS le cheat Gravité Zéro
+                const levelGravity = CONFIG.baseGravity * (config.gravityMultiplier || 1.0);
+                
+                // Le moteur de gravité final est soit le cheat (0.01), soit la gravité du niveau
+                const finalGravity = adminCheats.zeroGravity ? currentGravity : levelGravity;
+
+                // Dynamic Goal Light
+                if (config.dynamicGoalLight && goalLight) {
+                    const intensityBase = 0.5;
+                    const intensityRange = 1.0;
+                    goalLight.intensity = intensityBase + intensityRange * (Math.sin(time * 0.005) * 0.5 + 0.5); 
+                } else if (goalLight) {
+                    goalLight.intensity = 2.0; 
+                }
+
+                // --- Zone de Recharge Rapide ---
+                const playerPos = controls.getObject().position;
+                
+                for (const zone of boostZones) {
+                    const distanceXZ = Math.sqrt(
+                        (zone.position.x - playerPos.x) ** 2 +
+                        (zone.position.z - playerPos.z) ** 2
+                    );
+                    const verticalDistance = Math.abs(zone.position.y - playerPos.y);
+
+                    if (distanceXZ < 3.0 && verticalDistance < 2.5) { 
+                        if (!adminCheats.infiniteInk && maxInk !== Infinity && currentInk < maxInk) {
+                            currentInk = Math.min(maxInk, currentInk + 50); 
+                            updateHUD();
+                        }
+                        zone.scale.setScalar(1.0 + Math.sin(time * 0.01) * 0.05); 
+                    } else {
+                         zone.scale.setScalar(1.0);
+                    }
+                }
+                
                 // --- PHYSIQUE JOUEUR (Saut et Mouvement) ---
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= CONFIG.gravity * delta; 
+                
+                // Gravité: applique la gravité finale
+                velocity.y -= finalGravity * delta; 
 
                 direction.z = Number(moveForward) - Number(moveBackward);
                 direction.x = Number(moveRight) - Number(moveLeft);
                 direction.normalize();
 
-                if (moveForward || moveBackward) velocity.z -= direction.z * CONFIG.speed * 10.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * CONFIG.speed * 10.0 * delta;
+                // Applique la vitesse actuelle (normale ou hyper-vitesse)
+                if (moveForward || moveBackward) velocity.z -= direction.z * currentMoveSpeed * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * currentMoveSpeed * delta;
 
                 // Collisions Latérales (Simplifiées)
                 controls.moveRight(-velocity.x * delta);
                 controls.moveForward(-velocity.z * delta);
 
-                // Collisions Verticales (Nouveau système de saut stable)
-                const feetHeightOffset = playerHeight; // 1.8m
+                // Collisions Verticales
+                const feetHeightOffset = playerHeight;
                 const allColliders = [...staticColliders, ...paintBlocks.map(b => b.mesh)];
 
                 raycaster.set(controls.getObject().position, new THREE.Vector3(0, -1, 0));
-                raycaster.far = feetHeightOffset + 0.2; // Vérifier juste sous les pieds
+                raycaster.far = feetHeightOffset + 0.2;
                 
                 const vHits = raycaster.intersectObjects(allColliders, false);
-                let onImpulsePad = false;
                 
-                if (vHits.length > 0) {
+                if (vHits.length > 0 && !adminCheats.zeroGravity) {
                     const hit = vHits[0];
                     const distanceToGround = hit.distance;
                     
                     if (distanceToGround <= feetHeightOffset + 0.1) {
-                        // Pénétration ou ajustement de hauteur
                         const penetration = feetHeightOffset - distanceToGround;
                         
                         if (penetration > 0.01) {
@@ -813,23 +1291,20 @@
                         }
                         
                         velocity.y = Math.max(0, velocity.y);
-                        canJump = true; // Permet de sauter si l'on est au sol (même si l'input est désactivé)
+                        canJump = true;
 
                         // Vérification de la Plateforme d'Impulsion
                         if (hit.object.userData.isImpulsePad) {
-                            onImpulsePad = true;
-                            // Appliquer l'impulsion seulement si l'on vient de toucher le pad (velocity.y est basse)
                             if (velocity.y < 1.0) { 
                                 velocity.y = CONFIG.impulseBoost;
                             }
                         }
                     } else {
-                        // Chute libre (si on est trop haut pour la distance Far)
                         controls.getObject().position.y += velocity.y * delta;
                         canJump = false; 
                     }
                 } else {
-                    // Chute libre
+                    // Chute libre ou mode gravité zéro
                     controls.getObject().position.y += velocity.y * delta;
                     canJump = false; 
                 }
@@ -837,8 +1312,14 @@
 
                 // Limite basse (Respawn)
                 if (controls.getObject().position.y < -30) {
-                    controls.unlock(); 
-                    resetLevel(); // Relance le niveau en cours
+                    if (!adminCheats.invincible) {
+                        controls.unlock(); 
+                        resetLevel();
+                    } else {
+                        // Invincible: Remettre le joueur à la plateforme de départ
+                        controls.getObject().position.set(0, playerHeight / 2 + 0.5, 0);
+                        velocity.set(0, 0, 0); // Arrêter la chute
+                    }
                 }
                 
                 checkGoal();
